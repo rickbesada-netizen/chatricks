@@ -13,9 +13,16 @@ declare global {
 
 function getPool(): Pool {
   if (!global._pgPool) {
-    const connectionString = process.env.DATABASE_URL;
+    // Accept DATABASE_URL (manual) or the variables Vercel/Neon inject
+    // automatically when you create a Postgres store in the Vercel dashboard.
+    const connectionString =
+      process.env.DATABASE_URL ||
+      process.env.POSTGRES_URL ||
+      process.env.POSTGRES_PRISMA_URL;
     if (!connectionString) {
-      throw new Error("DATABASE_URL is not set (your Supabase connection string).");
+      throw new Error(
+        "No database URL set (DATABASE_URL or POSTGRES_URL). Create a Postgres store in Vercel, or set DATABASE_URL."
+      );
     }
     global._pgPool = new Pool({
       connectionString,
