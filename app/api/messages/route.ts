@@ -30,7 +30,7 @@ async function latestForClient(
   clientEmail: string,
   perClient: number
 ): Promise<MessageCard[]> {
-  const gmail = gmailForClient(clientId);
+  const gmail = await gmailForClient(clientId);
   const list = await gmail.users.messages.list({
     userId: "me",
     maxResults: perClient,
@@ -77,9 +77,9 @@ export async function GET(req: Request) {
 
   const targets =
     clientId === "all"
-      ? listClients().map((c) => ({ id: c.id, email: c.email }))
-      : (() => {
-          const c = getClient(clientId);
+      ? (await listClients()).map((c) => ({ id: c.id, email: c.email }))
+      : await (async () => {
+          const c = await getClient(clientId);
           return c ? [{ id: c.id, email: c.email }] : [];
         })();
 

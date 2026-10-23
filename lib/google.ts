@@ -49,8 +49,8 @@ export async function exchangeCode(code: string): Promise<Credentials> {
 // Returns a Gmail API client bound to a stored client's credentials.
 // If googleapis refreshes the access token, we persist the new tokens
 // (re-encrypted) so we never lose the refresh token.
-export function gmailForClient(clientId: string) {
-  const row = getClient(clientId);
+export async function gmailForClient(clientId: string) {
+  const row = await getClient(clientId);
   if (!row) throw new Error("Unknown client id");
 
   const stored = JSON.parse(decrypt(row.tokens_enc)) as Credentials;
@@ -59,9 +59,9 @@ export function gmailForClient(clientId: string) {
 
   oauth.on("tokens", (fresh) => {
     // Merge so we keep the refresh_token even when Google only returns a new
-    // access_token on refresh.
+    // access_token on refresh. Persist is fire-and-forget.
     const merged: Credentials = { ...stored, ...fresh };
-    updateClientTokens(clientId, encrypt(JSON.stringify(merged)));
+    updateClientTokens(clientId, encrypt(JSON.stringify(merged))).catch(() => {});
   });
 
   return google.gmail({ version: "v1", auth: oauth });

@@ -43,7 +43,7 @@ export async function GET(req: Request) {
     }
     const profile = await fetchProfile(tokens);
     const id = crypto.createHash("sha256").update(profile.email).digest("hex");
-    upsertClient({
+    await upsertClient({
       id,
       email: profile.email,
       name: state.label || profile.name,

@@ -2,85 +2,70 @@
 
 **Ch@ricks** — manage all your clients' Gmail from one place, with their consent.
 
-Manage multiple clients' Gmail from one dashboard, using **Google OAuth
-delegated access** — each client clicks **Allow** once, and you work their
-inbox on their behalf (read, reply/send, label) without ever touching their
-password or 2FA.
+Multi-client inbox using **Google OAuth delegated access**: each client clicks
+**Allow** once, and you work their inbox on their behalf (read, reply/send,
+label) without ever touching their password or 2FA.
 
-- **No passwords, no 2FA/Authenticator codes.** Google issues your app a
-  revocable token per client. One-time consent, then silent forever.
-- **Free to run** for up to ~100 clients (Google's unverified-app cap).
-- **Runs locally** by default. Tokens are stored encrypted in a local SQLite
-  file that never leaves your machine.
+- **No passwords, no 2FA/Authenticator codes.** Google issues a revocable token
+  per client. One-time consent, then silent forever.
+- **Cloud-hosted, always on** — free on Vercel + Supabase (Postgres).
+- Tokens are stored **encrypted** (AES-256-GCM) in your own database.
 
 > **Consent & legality:** only connect accounts whose owner has knowingly
-> authorized this. Keep your signed consent on file. Google can suspend
-> accounts used in ways their owners didn't agree to — delegated OAuth is the
+> authorized this. Keep your signed consent on file. Delegated OAuth is the
 > sanctioned route precisely because the owner approves it on Google's own
 > screen.
 
 ---
 
-## 1. One-time Google setup (free)
+## Architecture
 
-1. Go to <https://console.cloud.google.com/> → create a project (e.g. "Chat Ricks").
-2. **APIs & Services → Library →** enable the **Gmail API**.
-3. **APIs & Services → OAuth consent screen:**
-   - User type: **External**.
-   - Fill app name, your email, developer contact.
-   - **Scopes:** add `.../auth/gmail.modify` (plus `openid`, `userinfo.email`,
-     `userinfo.profile`).
-   - **Publishing status:** click **Publish app** → set to **In production**.
-     (This is what makes consent *one-time* — in "Testing" mode refresh tokens
-     expire after 7 days. Production + unverified is free and gives long-lived
-     tokens; clients just click past a one-time "unverified app" warning.)
-4. **APIs & Services → Credentials → Create credentials → OAuth client ID:**
-   - Type: **Web application**.
-   - **Authorized redirect URIs:** add exactly
-     `http://localhost:3000/api/auth/callback`
-     (and your real https URL later if you deploy).
-   - Copy the **Client ID** and **Client secret**.
+Next.js (App Router) · googleapis · Postgres (`pg`) · AES-256-GCM token encryption.
+Deployed on Vercel; database on Supabase.
+
+## Setup overview
+
+1. **Google Cloud** — enable Gmail API, configure OAuth consent screen, create a
+   Web OAuth client. (Done via the console.)
+2. **Supabase** — create a free project, grab the pooled connection string.
+3. **Vercel** — import this repo, set environment variables, deploy.
+4. **Google** — add your Vercel callback URL as an authorized redirect URI.
+
+### Environment variables (set these in Vercel → Project → Settings → Environment Variables)
+
+| Variable | Where it comes from |
+|---|---|
+| `GOOGLE_CLIENT_ID` | Google Cloud → Clients → your OAuth client |
+| `GOOGLE_CLIENT_SECRET` | same OAuth client (keep secret) |
+| `GOOGLE_REDIRECT_URI` | `https://<your-app>.vercel.app/api/auth/callback` |
+| `TOKEN_ENCRYPTION_KEY` | run `npm run genkey` locally, or any 32-byte base64 value |
+| `DATABASE_URL` | Supabase → Database → **Connection pooling** string (port 6543) |
+| `APP_PASSWORD` | a password only you know (gates the dashboard) |
+
+Generate an encryption key without installing anything else:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+The `clients` table is created automatically on first use — no manual SQL needed.
 
 ---
 
-## 2. Configure the app
-
-```bash
-cp .env.example .env
-npm install
-npm run genkey          # prints a 32-byte key — paste it as TOKEN_ENCRYPTION_KEY
-```
-
-Edit `.env`:
-
-- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — from step 1.4
-- `GOOGLE_REDIRECT_URI` — leave as `http://localhost:3000/api/auth/callback` for local
-- `TOKEN_ENCRYPTION_KEY` — the value from `npm run genkey`
-- `APP_PASSWORD` — a password only you know (gates the dashboard)
-
----
-
-## 3. Run
-
-```bash
-npm run dev
-```
-
-Open <http://localhost:3000>, enter your `APP_PASSWORD`.
+## Using it
 
 ### Connect a client
-1. Click **Connect a client**, optionally label them, **Copy link**.
-2. Send that link to the client (or open it yourself while they're with you).
-3. They sign in to *their* Google account and click **Allow** once.
-4. Their inbox appears in your dashboard. Done — you won't need to ask again.
+1. Open your dashboard (your Vercel URL), log in with `APP_PASSWORD`.
+2. Click **Connect a client**, optionally label them, **Copy link**.
+3. Send that link to the client (or open it while they're with you).
+4. They sign in to *their* Google account and click **Allow** once.
+5. Their inbox appears in your dashboard.
 
 ### Daily use
 - **All inboxes** shows the newest mail across every client.
 - Click a client in the sidebar to focus just theirs.
 - **Reply** sends from the client's own address, on their behalf.
-- **✕** next to a client disconnects them (removes stored tokens).
-
----
+- **✕** disconnects a client (removes stored tokens).
 
 ## How access works (no codes, ever)
 
@@ -91,25 +76,32 @@ Client clicks "Allow"  ──▶  Google gives Ch@ricks a refresh token
 Ch@ricks silently mints short-lived access tokens as needed ──▶ Gmail API
 ```
 
-The refresh token is long-lived in Production mode. Google only forces a
-re-consent if the client revokes access, changes their password, 6+ months of
-inactivity pass, or you add new scopes.
+In **Production** publishing mode the refresh token is long-lived — Google only
+forces a re-consent if the client revokes access, changes their password, 6+
+months of inactivity pass, or you add new scopes. (In **Testing** mode tokens
+expire after 7 days, so switch to Production for real use.)
 
 ## Security notes
 
-- `.env` and the `*.db` file are gitignored — **never commit them**. They hold
-  your client secret and the (encrypted) client tokens.
+- Never commit `.env`. Secrets live only in Vercel's environment variables.
 - Tokens are encrypted at rest with AES-256-GCM using `TOKEN_ENCRYPTION_KEY`.
-- The dashboard is gated by `APP_PASSWORD`. If you deploy this on the public
-  internet, put it behind HTTPS and consider stronger auth.
+- The dashboard is gated by `APP_PASSWORD` over HTTPS.
 
 ## Scaling past ~100 clients
 
-The 100-user limit is Google's cap for *unverified* apps on restricted scopes.
-To go beyond it, submit the app for **OAuth verification** (includes a
-third-party CASA security assessment — an annual cost). This app is built
-encrypted + consent-based from day one to make that review straightforward.
+100 users is Google's cap for *unverified* apps on restricted scopes. Beyond it,
+submit for **OAuth verification** (includes an annual third-party CASA security
+assessment). This app is built encrypted + consent-based to make that review
+straightforward.
 
-## Tech
+## Local development (optional)
 
-Next.js (App Router) · googleapis · better-sqlite3 · AES-256-GCM token encryption.
+You can still run it locally against the same Supabase database:
+
+```bash
+npm install
+cp .env.example .env     # fill in values; set GOOGLE_REDIRECT_URI to
+                         # http://localhost:3000/api/auth/callback and add that
+                         # URI to your Google OAuth client too
+npm run dev
+```

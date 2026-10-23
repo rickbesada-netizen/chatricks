@@ -19,15 +19,15 @@ export function makeAuthToken(password: string): string {
 }
 
 export function passwordMatches(password: string): boolean {
-  const a = Buffer.from(makeAuthToken(password));
-  const b = Buffer.from(expectedToken());
+  const a = Uint8Array.from(Buffer.from(makeAuthToken(password)));
+  const b = Uint8Array.from(Buffer.from(expectedToken()));
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 export function isAuthed(): boolean {
   const token = cookies().get(AUTH_COOKIE)?.value;
   if (!token) return false;
-  const a = Buffer.from(token);
-  const b = Buffer.from(expectedToken());
+  const a = Uint8Array.from(Buffer.from(token));
+  const b = Uint8Array.from(Buffer.from(expectedToken()));
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }

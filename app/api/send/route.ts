@@ -43,11 +43,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const client = getClient(b.clientId);
+  const client = await getClient(b.clientId);
   if (!client) return NextResponse.json({ error: "unknown client" }, { status: 404 });
 
   try {
-    const gmail = gmailForClient(b.clientId);
+    const gmail = await gmailForClient(b.clientId);
     const raw = buildRaw({
       from: client.email,
       to: b.to,
