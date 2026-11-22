@@ -24,7 +24,11 @@ The hosting half is automated. Click this, and Vercel clones the app, **creates
 the free database for you**, and asks for the keys — no manual Vercel/database
 clicking:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frickbesada-netizen%2Fchatricks&env=GOOGLE_CLIENT_ID%2CGOOGLE_CLIENT_SECRET%2CAPP_PASSWORD%2CTOKEN_ENCRYPTION_KEY&envDescription=Google%20OAuth%20keys%2C%20a%20login%20password%2C%20and%20an%20encryption%20key&envLink=https%3A%2F%2Fgithub.com%2Frickbesada-netizen%2Fchatricks%2Fblob%2Fmain%2FSETUP.md&project-name=chatricks&repository-name=chatricks&stores=%5B%7B%22type%22%3A%22postgres%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frickbesada-netizen%2Fchatricks&env=GOOGLE_CLIENT_ID%2CGOOGLE_CLIENT_SECRET%2CAPP_PASSWORD%2CTOKEN_ENCRYPTION_KEY&envDescription=Google%20OAuth%20keys%2C%20a%20login%20password%2C%20and%20an%20encryption%20key&envLink=https%3A%2F%2Fgithub.com%2Frickbesada-netizen%2Fchatricks%2Fblob%2Fmain%2FSETUP.md)
+
+After it deploys, add the free database once: in the new project → **Storage →
+Create Database → Neon (Postgres) → Free**, connect it, then **Redeploy**. (The
+app reads the `DATABASE_URL`/`POSTGRES_URL` that Neon adds automatically.)
 
 It prompts for 4 values:
 
