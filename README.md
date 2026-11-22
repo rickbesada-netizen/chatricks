@@ -47,6 +47,7 @@ account):**
 5. **Clients → Create client → Web application** → copy the **Client ID + secret** (these go in the Deploy prompts).
 6. After deploying, copy your app's URL and add **`https://YOUR-URL/api/auth/callback`** to that client's **Authorized redirect URIs**.
 
+Just the Google steps, as a printable checklist: **[Chat-Ricks-Google-Steps.pdf](Chat-Ricks-Google-Steps.pdf)**.
 Full walk-through with screenshots: see **[SETUP.md](SETUP.md)**.
 
 ---
