@@ -18,10 +18,43 @@ label) without ever touching their password or 2FA.
 
 ---
 
+## 🚀 Fast setup (one-click deploy)
+
+The hosting half is automated. Click this, and Vercel clones the app, **creates
+the free database for you**, and asks for the keys — no manual Vercel/database
+clicking:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Frickbesada-netizen%2Fchatricks&env=GOOGLE_CLIENT_ID%2CGOOGLE_CLIENT_SECRET%2CAPP_PASSWORD%2CTOKEN_ENCRYPTION_KEY&envDescription=Google%20OAuth%20keys%2C%20a%20login%20password%2C%20and%20an%20encryption%20key&envLink=https%3A%2F%2Fgithub.com%2Frickbesada-netizen%2Fchatricks%2Fblob%2Fmain%2FSETUP.md&project-name=chatricks&repository-name=chatricks&stores=%5B%7B%22type%22%3A%22postgres%22%7D%5D)
+
+It prompts for 4 values:
+
+| Prompt | What to paste |
+|---|---|
+| `GOOGLE_CLIENT_ID` | from your Google OAuth client (see below) |
+| `GOOGLE_CLIENT_SECRET` | from your Google OAuth client |
+| `APP_PASSWORD` | any password — it's how you'll log into your dashboard |
+| `TOKEN_ENCRYPTION_KEY` | run `npm run genkey`, or paste the output of the browser snippet in SETUP.md |
+
+You do **not** set a redirect URL or a database URL — the app figures out its
+own redirect URL, and the Deploy button creates the database automatically.
+
+**The only manual part (Google — can't be automated, it's tied to your Google
+account):**
+1. [console.cloud.google.com](https://console.cloud.google.com) → new project → enable **Gmail API**.
+2. **OAuth consent screen** → External → fill name/emails.
+3. **Branding** → add your app URL as home page, `.../privacy`, `.../terms`, and authorized domain.
+4. **Audience → Publish app** (→ *In production*, free up to 100 accounts).
+5. **Clients → Create client → Web application** → copy the **Client ID + secret** (these go in the Deploy prompts).
+6. After deploying, copy your app's URL and add **`https://YOUR-URL/api/auth/callback`** to that client's **Authorized redirect URIs**.
+
+Full walk-through with screenshots: see **[SETUP.md](SETUP.md)**.
+
+---
+
 ## Architecture
 
 Next.js (App Router) · googleapis · Postgres (`pg`) · AES-256-GCM token encryption.
-Deployed on Vercel; database on Supabase.
+Deployed on Vercel; database is any Postgres (the Deploy button provisions one).
 
 ## Setup overview
 

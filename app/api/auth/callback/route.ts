@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { cookies } from "next/headers";
-import { exchangeCode, fetchProfile } from "@/lib/google";
+import { exchangeCode, fetchProfile, redirectUriFromRequest } from "@/lib/google";
 import { encrypt } from "@/lib/crypto";
 import { upsertClient } from "@/lib/db";
 
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const tokens = await exchangeCode(code);
+    const tokens = await exchangeCode(code, redirectUriFromRequest(req));
     if (!tokens.refresh_token) {
       // Happens if the account previously consented and Google didn't re-issue
       // a refresh token. The client should remove the app's access and retry.

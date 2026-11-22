@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { consentUrl } from "@/lib/google";
+import { consentUrl, redirectUriFromRequest } from "@/lib/google";
 
 export const runtime = "nodejs";
 
@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     "base64url"
   );
 
-  const res = NextResponse.redirect(consentUrl(state));
+  const res = NextResponse.redirect(consentUrl(state, redirectUriFromRequest(req)));
   res.cookies.set("chatricks_oauth_nonce", nonce, {
     httpOnly: true,
     sameSite: "lax",
